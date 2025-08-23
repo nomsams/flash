@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flashcards.app/schema/deck-1.3.0-extended.json",
+  "title": "FlashCards Deck (v1.3.0, Extended for LLM Generation)",
+  "type": "object",
+  "additionalProperties": false,
+
+  "$comment": "This schema describes the import format used by the Offline FlashCards web app. It is intentionally verbose to help LLMs generate valid decks from arbitrary sources. Fields marked as OPTIONAL may be omitted; the app will fill sensible defaults on import. Unknown extra fields are ignored by the app.",
+
+  "required": ["schema_version", "name", "cards"],
+  "properties": {
+    "schema_version": {
+      "const": "1.3.0",
+      "description": "MUST be exactly '1.3.0' for v1 importers."
+    },
+
+    "deck_id": {
+      "type": "string",
+      "description": "OPTIONAL UUID (string). If omitted, the app generates a new UUID.",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+      "examples": ["8b0f6a85-4137-4a87-9a97-5b7f2d8c9a6a"]
+    },
+
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Human-friendly deck name. Keep it concise and descriptive."
+    },
+
+    "language": {
+      "type": "string",
+      "description": "BCP47 language tag for card content. The app UI is English-only, but content can be any language.",
+      "default": "en",
+      "examples": ["en", "es", "fr", "sv"]
+    },
+
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "OPTIONAL ISO-8601. Set by the app if missing."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "OPTIONAL ISO-8601. Set by the app if missing."
+    },
+
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "OPTIONAL metadata describing how this deck was generated.",
+      "properties": {
+        "source_name": { "type": "string", "description": "Primary source or corpus name." },
+        "source_url":  { "type": "string", "format": "uri", "description": "Canonical URL (if any) for the corpus/document." },
+        "license":     { "type": "string", "description": "License or usage terms of the source content." },
+        "generator":   { "type": "string", "description": "Tool or model used (e.g., 'gpt-5', 'custom-script')." },
+        "generator_version": { "type": "string", "description": "Version/hash of the tool or model." },
+        "generated_at": { "type": "string", "format": "date-time", "description": "When cards were generated." },
+        "method":      { "type": "string", "description": "High-level method (e.g., 'QA extraction', 'definition synthesis')." },
+        "chunking_strategy": { "type": "string", "description": "How the text was split (e.g., 'by headings', 'fixed 1k chars with overlap=200')." },
+        "chunk_size_chars": { "type": "integer", "minimum": 0, "description": "Approx character size per chunk (if applicable)." }
+      }
+    },
+
+    "media": {
+      "type": "array",
+      "description": "OPTIONAL. Embedded images referenced from markdown via ![alt|w=NN](media:<media_id>). Images must be ≤1600px max-dimension and ≤300 KB after compression. PNG only if transparency is required; otherwise JPEG with black/white background fill.",
+      "items": { "$ref": "#/$defs/media" },
+      "default": []
+    },
+
+    "cards": {
+      "type": "array",
+      "description": "Array of cards (1–1000). The app detects duplicates by normalized front/back text.",
+      "minItems": 1,
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/card" }
+    },
+
+    "settings": {
+      "type": "object",
+      "description": "OPTIONAL deck-level settings (importer supplies defaults if omitted).",
+      "additionalProperties": false,
+      "properties": {
+        "default_mode": {
+          "type": "string",
+          "enum": ["mixed", "a_to_b", "b_to_a"],
+          "default": "mixed",
+          "description": "Default training direction when starting a session."
+        },
+        "prioritization_intensity": {
+          "type": "string",
+          "enum": ["medium"],
+          "default": "medium",
+          "description": "UI-hidden hint; internally α is fixed in v1."
+        },
+        "skip_penalty_factor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.5,
+          "description": "Bias to resurface skipped cards."
+        },
+        "deck_overrides_allowed": {
+          "type": "boolean",
+          "default": true
+        },
+        "merge_log": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Importer may append merge notes here."
+        }
+      }
+    },
+
+    "generation_guidelines": {
+      "type": "string",
+      "description": "OPTIONAL free-text instructions bundled with the deck for human review. Not used by the app runtime.",
+      "examples": [
+        "Each front should ask a tight question; each back should be a single authoritative answer. Avoid multi-fact lists unless using tables."
+      ]
+    }
+  },
+
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    },
+
+    "tagString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[^,\\s].*[^,\\s]$",
+      "description": "No leading/trailing whitespace or commas. Max 64 chars."
+    },
+
+    "media": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["media_id", "type", "mime", "width", "height", "bytes", "data_url", "background", "original_name", "added_at"],
+      "properties": {
+        "media_id": { "$ref": "#/$defs/uuid", "description": "Used in markdown link target: media:<media_id>." },
+        "type": { "const": "image" },
+        "mime": {
+          "type": "string",
+          "enum": ["image/jpeg", "image/png"],
+          "description": "PNG only when transparency is necessary and final size ≤300 KB; otherwise JPEG."
+        },
+        "width":  { "type": "integer", "minimum": 1, "maximum": 1600 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 1600 },
+        "bytes":  { "type": "integer", "minimum": 1, "maximum": 307200, "description": "Max ~300 KB after compression." },
+        "data_url": {
+          "type": "string",
+          "pattern": "^data:image\\/(jpeg|png);base64,[A-Za-z0-9+/=]+$",
+          "description": "Base64-encoded data URL."
+        },
+        "background": {
+          "type": "string",
+          "enum": ["black", "white", "transparent"],
+          "description": "For JPEG conversions use black/white; for PNG with alpha use 'transparent'."
+        },
+        "original_name": { "type": "string", "maxLength": 200 },
+        "added_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "card": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["front", "back"],
+      "properties": {
+        "card_id": { "$ref": "#/$defs/uuid", "description": "OPTIONAL. App generates if missing." },
+
+        "front": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000,
+          "description": "Markdown (safe subset). Prefer concise prompts/questions.\nSupported: **bold**, *italic*, `inline code`, [label](https://...), pipe tables, and images via ![alt|w=320](media:<id>)."
+        },
+
+        "back": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000,
+          "description": "Markdown (safe subset). Prefer a single authoritative answer or a compact table."
+        },
+
+        "meta": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": { "tags": [], "notes": "", "hint": "" },
+          "properties": {
+            "tags": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/tagString" },
+              "uniqueItems": true,
+              "maxItems": 10,
+              "description": "Labels for filtering and merged-deck provenance (e.g., 'geology', 'deck:Intro Geology')."
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 8000,
+              "description": "OPTIONAL author/editor notes in markdown. Not shown during training."
+            },
+            "hint": {
+              "type": "string",
+              "maxLength": 800,
+              "description": "OPTIONAL plain-text hint; shown only on request."
+            }
+          }
+        },
+
+        "stats": {
+          "type": "object",
+          "description": "OPTIONAL. If omitted, importer initializes all-zero.",
+          "additionalProperties": false,
+          "properties": {
+            "global": { "$ref": "#/$defs/statsGlobal" },
+            "a_to_b": { "$ref": "#/$defs/statsDirectional" },
+            "b_to_a": { "$ref": "#/$defs/statsDirectional" }
+          }
+        }
+      },
+
+      "$comment": "LLM guidance: FRONT should be the cue; BACK the target knowledge. If both directions make sense, the app will track difficulty for each direction automatically."
+    },
+
+    "statsGlobal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["appearances_total", "correct_total", "total_time_sec", "last_correct_at"],
+      "properties": {
+        "appearances_total": { "type": "integer", "minimum": 0, "default": 0 },
+        "correct_total":     { "type": "integer", "minimum": 0, "default": 0 },
+        "total_time_sec":    { "type": "integer", "minimum": 0, "default": 0 },
+        "last_correct_at":   { "type": ["string", "null"], "format": "date-time", "default": null }
+      }
+    },
+
+    "statsDirectional": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempts", "correct", "skips", "time_sec", "success_rate", "last_seen", "last_result", "last_correct_at"],
+      "properties": {
+        "attempts":       { "type": "integer", "minimum": 0, "default": 0 },
+        "correct":        { "type": "integer", "minimum": 0, "default": 0 },
+        "skips":          { "type": "integer", "minimum": 0, "default": 0 },
+        "time_sec":       { "type": "integer", "minimum": 0, "default": 0 },
+        "success_rate":   { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+        "last_seen":      { "type": ["string", "null"], "format": "date-time", "default": null },
+        "last_result":    { "type": ["string", "null"], "enum": ["correct", "incorrect", "skip", null], "default": null },
+        "last_correct_at":{ "type": ["string", "null"], "format": "date-time", "default": null }
+      },
+
+      "$comment": "For freshly generated decks set all zeros/nulls. The app updates these values during training."
+    }
+  },
+
+  "examples": [
+    {
+      "schema_version": "1.3.0",
+      "name": "Sample Deck",
+      "language": "en",
+      "media": [],
+      "cards": [
+        {
+          "front": "**What is the capital of France?**",
+          "back": "Paris.",
+          "meta": { "tags": ["geography"] }
+        }
+      ]
+    }
+  ],
+
+  "$comment": "LLM QUALITY CHECKLIST: 1) Each card should test one idea. 2) Keep fronts terse; put detail on the back. 3) Prefer definitional prompts, cloze-style, or clear Q&A. 4) Use tables for multi-row facts. 5) Avoid ambiguous phrasing. 6) No HTML; only the described markdown subset. 7) If you include images, reference them with media:<id> and include matching objects under 'media'. 8) Max 1,000 cards per deck."
+}
