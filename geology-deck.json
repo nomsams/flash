@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.3.0",
+  "name": "Intro Geology: Rocks & Earth Structure",
+  "language": "en",
+  "created_at": "2025-08-23T12:00:00Z",
+  "updated_at": "2025-08-23T12:00:00Z",
+  "provenance": {
+    "source_name": "Basic Geology Notes",
+    "method": "Definition & Q&A synthesis",
+    "generator": "LLM",
+    "generated_at": "2025-08-23T12:00:00Z"
+  },
+  "media": [],
+  "settings": {
+    "default_mode": "mixed",
+    "skip_penalty_factor": 0.5,
+    "deck_overrides_allowed": true
+  },
+  "cards": [
+    {
+      "front": "**What are the three main rock types in geology?**",
+      "back": "- **Igneous**: crystallized from molten magma/lava.\n- **Sedimentary**: formed from deposited particles or chemical precipitation.\n- **Metamorphic**: transformed by heat, pressure, and/or fluids.",
+      "meta": {
+        "tags": ["geology", "rocks", "deck:Intro Geology"],
+        "hint": "Think: fire, layers, change.",
+        "notes": "Classic classification; good entry card."
+      }
+    },
+    {
+      "front": "**Define the *rock cycle*.**",
+      "back": "A conceptual model describing how **igneous**, **sedimentary**, and **metamorphic** rocks transform into one another through processes such as **melting**, **cooling/crystallization**, **weathering/erosion**, **deposition/lithification**, and **metamorphism**.",
+      "meta": {
+        "tags": ["geology", "processes", "rocks", "deck:Intro Geology"],
+        "hint": "Continuous transformation among rock types."
+      }
+    },
+    {
+      "front": "**Layers of the Earth (outer → inner)** — fill the table:",
+      "back": "Layer | Composition/Notes\n---|---\n**Crust** | Thin, brittle outer shell; continental & oceanic.\n**Mantle** | Solid but plastic; convection drives plate motion.\n**Core** | Outer liquid iron-nickel; inner solid iron-nickel.",
+      "meta": {
+        "tags": ["geology", "earth-structure", "deck:Intro Geology"],
+        "hint": "Crust, mantle, core — with states of matter."
+      }
+    }
+  ]
+}
